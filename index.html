@@ -2,11 +2,11 @@
 <html>
 <head>
 
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Premier Bingo</title>
+<title>Premier Bingo OCR</title>
 
-<script src="https://unpkg.com/@zxing/library@latest"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
 <style>
 
@@ -33,7 +33,6 @@ width:100%;
 padding:15px;
 font-size:18px;
 margin-top:10px;
-box-sizing:border-box;
 }
 
 button{
@@ -49,16 +48,15 @@ border-radius:10px;
 margin-top:15px;
 }
 
-#ultimo{
-font-size:45px;
-font-weight:bold;
-text-align:center;
-margin:20px;
+canvas{
+display:none;
 }
 
-#total{
-font-size:25px;
+.resultado{
 text-align:center;
+font-size:35px;
+font-weight:bold;
+margin:20px;
 }
 
 .caixa{
@@ -68,15 +66,9 @@ margin-top:5px;
 border-radius:8px;
 }
 
-.erro{
-color:red;
-text-align:center;
-}
-
 </style>
 
 </head>
-
 
 <body>
 
@@ -84,26 +76,36 @@ text-align:center;
 <div class="container">
 
 
-<h1>Premier Bingo</h1>
+<h1>Premier Bingo OCR</h1>
 
 
-<input id="cliente" placeholder="Nome do cliente">
+<input id="cliente" placeholder="Nome cliente">
 
 
-<button onclick="ligarCamera()">
-📷 INICIAR LEITURA
+<button onclick="abrirCamera()">
+📷 Abrir Câmara
 </button>
 
 
-<video id="video"></video>
+<video id="video" autoplay></video>
 
 
-<div class="erro" id="erro"></div>
+<button onclick="lerNumero()">
+🔍 LER NÚMERO
+</button>
 
 
-<h3>Última caixa</h3>
+<canvas id="canvas"></canvas>
 
-<div id="ultimo">-</div>
+
+<div class="resultado" id="resultado">
+-
+</div>
+
+
+<button onclick="confirmar()">
+✅ CONFIRMAR
+</button>
 
 
 <div id="total">
@@ -114,11 +116,6 @@ Total: 0
 <div id="lista"></div>
 
 
-<button onclick="finalizar()">
-FINALIZAR
-</button>
-
-
 </div>
 
 
@@ -127,81 +124,124 @@ FINALIZAR
 
 
 let caixas=[];
-
-let scanner = null;
-
+let numeroAtual="";
 
 
-function ligarCamera(){
+async function abrirCamera(){
 
 
-const codeReader = new ZXing.BrowserMultiFormatReader();
+let stream = await navigator.mediaDevices.getUserMedia({
 
-scanner=codeReader;
-
-
-codeReader.decodeFromVideoDevice(
-null,
-'video',
-(result,err)=>{
-
-
-if(result){
-
-let codigo=result.text;
-
-
-// Aqui assumimos que o código de barras
-// contém apenas o número da caixa
-
-
-adicionarCaixa(codigo);
-
-
-navigator.vibrate(200);
-
+video:{
+facingMode:"environment"
 }
-
 
 });
 
 
+document.getElementById("video").srcObject=stream;
+
+
 }
 
 
 
-function adicionarCaixa(numero){
+async function lerNumero(){
 
 
-let erro=document.getElementById("erro");
+let video=document.getElementById("video");
+
+let canvas=document.getElementById("canvas");
+
+canvas.width=video.videoWidth;
+canvas.height=video.videoHeight;
 
 
-if(caixas.includes(numero)){
+let ctx=canvas.getContext("2d");
+
+ctx.drawImage(video,0,0);
 
 
-erro.innerHTML=
-"⚠ Caixa "+numero+" já registada";
 
+document.getElementById("resultado").innerHTML="A ler...";
+
+
+let resultado = await Tesseract.recognize(
+
+canvas,
+
+"eng"
+
+);
+
+
+
+let texto=resultado.data.text;
+
+
+
+console.log(texto);
+
+
+// procura números
+
+let numeros=texto.match(/\d+/g);
+
+
+
+if(numeros){
+
+
+numeroAtual=numeros[0];
+
+
+document.getElementById("resultado").innerHTML=
+numeroAtual;
+
+
+}
+
+else{
+
+
+document.getElementById("resultado").innerHTML=
+"Não encontrei";
+
+
+}
+
+
+}
+
+
+
+function confirmar(){
+
+
+if(numeroAtual=="") return;
+
+
+if(caixas.includes(numeroAtual)){
+
+alert("Caixa já registada");
 
 return;
 
-
 }
 
 
-erro.innerHTML="";
-
-
-caixas.push(numero);
-
-
-
-document.getElementById("ultimo").innerHTML=
-numero;
+caixas.push(numeroAtual);
 
 
 document.getElementById("total").innerHTML=
 "Total: "+caixas.length;
+
+
+document.getElementById("resultado").innerHTML=
+"✔ "+numeroAtual;
+
+
+numeroAtual="";
 
 
 mostrar();
@@ -216,41 +256,18 @@ function mostrar(){
 
 let lista=document.getElementById("lista");
 
-
 lista.innerHTML="";
 
 
 caixas.forEach(c=>{
 
-
 lista.innerHTML+=
 "<div class='caixa'>✔ "+c+"</div>";
-
 
 });
 
 
 }
-
-
-
-function finalizar(){
-
-
-let cliente=document.getElementById("cliente").value;
-
-
-alert(
-"Cliente: "+cliente+
-"\n\nCaixas:\n"+
-caixas.join("\n")+
-"\n\nTotal: "+
-caixas.length
-);
-
-
-}
-
 
 
 </script>
