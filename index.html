@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
 <title>Premier Bingo OCR</title>
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
@@ -12,14 +13,14 @@
 
 body{
 font-family:Arial;
-background:#f2f2f2;
+background:#f1f1f1;
 padding:15px;
 }
 
 .container{
 background:white;
-padding:20px;
 border-radius:15px;
+padding:20px;
 max-width:450px;
 margin:auto;
 }
@@ -30,45 +31,64 @@ text-align:center;
 
 input,button{
 width:100%;
-padding:15px;
+padding:16px;
 font-size:18px;
 margin-top:10px;
+border-radius:10px;
+box-sizing:border-box;
 }
 
 button{
 background:#111;
 color:white;
 border:0;
-border-radius:10px;
 }
 
 video{
 width:100%;
-border-radius:10px;
 margin-top:15px;
+border-radius:15px;
 }
 
 canvas{
 display:none;
 }
 
-.resultado{
-text-align:center;
-font-size:35px;
-font-weight:bold;
-margin:20px;
+
+.moldura{
+border:3px solid red;
+height:80px;
+margin-top:-150px;
+position:relative;
+z-index:2;
 }
 
+
+.resultado{
+
+font-size:45px;
+font-weight:bold;
+text-align:center;
+margin:25px;
+
+}
+
+
 .caixa{
+
 background:#eee;
 padding:10px;
 margin-top:5px;
 border-radius:8px;
+
 }
+
 
 </style>
 
+
 </head>
+
 
 <body>
 
@@ -76,10 +96,10 @@ border-radius:8px;
 <div class="container">
 
 
-<h1>Premier Bingo OCR</h1>
+<h1>Premier Bingo</h1>
 
 
-<input id="cliente" placeholder="Nome cliente">
+<input id="cliente" placeholder="Nome do cliente">
 
 
 <button onclick="abrirCamera()">
@@ -87,11 +107,14 @@ border-radius:8px;
 </button>
 
 
-<video id="video" autoplay></video>
+<video id="video" autoplay playsinline></video>
+
+
+<div class="moldura"></div>
 
 
 <button onclick="lerNumero()">
-🔍 LER NÚMERO
+🔍 Ler número
 </button>
 
 
@@ -104,7 +127,7 @@ border-radius:8px;
 
 
 <button onclick="confirmar()">
-✅ CONFIRMAR
+✅ Confirmar número
 </button>
 
 
@@ -118,160 +141,3 @@ Total: 0
 
 </div>
 
-
-
-<script>
-
-
-let caixas=[];
-let numeroAtual="";
-
-
-async function abrirCamera(){
-
-
-let stream = await navigator.mediaDevices.getUserMedia({
-
-video:{
-facingMode:"environment"
-}
-
-});
-
-
-document.getElementById("video").srcObject=stream;
-
-
-}
-
-
-
-async function lerNumero(){
-
-
-let video=document.getElementById("video");
-
-let canvas=document.getElementById("canvas");
-
-canvas.width=video.videoWidth;
-canvas.height=video.videoHeight;
-
-
-let ctx=canvas.getContext("2d");
-
-ctx.drawImage(video,0,0);
-
-
-
-document.getElementById("resultado").innerHTML="A ler...";
-
-
-let resultado = await Tesseract.recognize(
-
-canvas,
-
-"eng"
-
-);
-
-
-
-let texto=resultado.data.text;
-
-
-
-console.log(texto);
-
-
-// procura números
-
-let numeros=texto.match(/\d+/g);
-
-
-
-if(numeros){
-
-
-numeroAtual=numeros[0];
-
-
-document.getElementById("resultado").innerHTML=
-numeroAtual;
-
-
-}
-
-else{
-
-
-document.getElementById("resultado").innerHTML=
-"Não encontrei";
-
-
-}
-
-
-}
-
-
-
-function confirmar(){
-
-
-if(numeroAtual=="") return;
-
-
-if(caixas.includes(numeroAtual)){
-
-alert("Caixa já registada");
-
-return;
-
-}
-
-
-caixas.push(numeroAtual);
-
-
-document.getElementById("total").innerHTML=
-"Total: "+caixas.length;
-
-
-document.getElementById("resultado").innerHTML=
-"✔ "+numeroAtual;
-
-
-numeroAtual="";
-
-
-mostrar();
-
-
-}
-
-
-
-function mostrar(){
-
-
-let lista=document.getElementById("lista");
-
-lista.innerHTML="";
-
-
-caixas.forEach(c=>{
-
-lista.innerHTML+=
-"<div class='caixa'>✔ "+c+"</div>";
-
-});
-
-
-}
-
-
-</script>
-
-
-</body>
-</html>
