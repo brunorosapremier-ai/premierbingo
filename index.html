@@ -140,4 +140,266 @@ Total: 0
 
 
 </div>
+  <script>
+
+let caixas = [];
+let numeroAtual = "";
+
+let video = document.getElementById("video");
+let canvas = document.getElementById("canvas");
+
+
+// Abrir câmara traseira
+
+async function abrirCamera(){
+
+try{
+
+let stream = await navigator.mediaDevices.getUserMedia({
+
+video:{
+facingMode:{
+ideal:"environment"
+}
+}
+
+});
+
+
+video.srcObject = stream;
+
+
+}
+
+catch(e){
+
+alert("Não foi possível abrir a câmara");
+
+}
+
+
+}
+
+
+// Ler número
+
+async function lerNumero(){
+
+
+let ctx = canvas.getContext("2d");
+
+
+canvas.width = video.videoWidth;
+canvas.height = video.videoHeight;
+
+
+// tirar fotografia
+
+ctx.drawImage(
+video,
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+
+// melhorar imagem
+
+let imagem = ctx.getImageData(
+0,
+0,
+canvas.width,
+canvas.height
+);
+
+
+for(let i=0;i<imagem.data.length;i+=4){
+
+
+let media =
+(
+imagem.data[i]+
+imagem.data[i+1]+
+imagem.data[i+2]
+)/3;
+
+
+// preto e branco
+
+let valor = media < 150 ? 0 : 255;
+
+
+imagem.data[i]=valor;
+imagem.data[i+1]=valor;
+imagem.data[i+2]=valor;
+
+
+}
+
+
+ctx.putImageData(imagem,0,0);
+
+
+
+document.getElementById("resultado").innerHTML=
+"A ler...";
+
+
+
+// OCR apenas números
+
+let resultado = await Tesseract.recognize(
+
+canvas,
+
+"eng",
+
+{
+
+tessedit_char_whitelist:
+"0123456789"
+
+}
+
+);
+
+
+
+let texto =
+resultado.data.text;
+
+
+
+console.log(texto);
+
+
+
+// procurar números
+
+let encontrados =
+texto.match(/\d+/g);
+
+
+
+if(encontrados){
+
+
+// escolhe o maior número encontrado
+
+numeroAtual =
+encontrados.sort(
+(a,b)=>b.length-a.length
+)[0];
+
+
+document.getElementById("resultado").innerHTML =
+numeroAtual;
+
+
+}
+
+else{
+
+
+numeroAtual="";
+
+
+document.getElementById("resultado").innerHTML =
+"Não encontrei";
+
+
+}
+
+
+}
+
+
+
+// confirmar número
+
+
+function confirmar(){
+
+
+if(numeroAtual==""){
+return;
+}
+
+
+
+if(caixas.includes(numeroAtual)){
+
+
+alert(
+"⚠ Caixa "+numeroAtual+" já registada"
+);
+
+
+return;
+
+}
+
+
+
+caixas.push(numeroAtual);
+
+
+
+navigator.vibrate(200);
+
+
+
+document.getElementById("resultado").innerHTML =
+"✔ "+numeroAtual;
+
+
+
+document.getElementById("total").innerHTML =
+"Total: "+caixas.length;
+
+
+
+mostrarLista();
+
+
+
+numeroAtual="";
+
+
+}
+
+
+
+
+function mostrarLista(){
+
+
+let lista =
+document.getElementById("lista");
+
+
+lista.innerHTML="";
+
+
+caixas.forEach(function(c){
+
+
+lista.innerHTML +=
+
+"<div class='caixa'>✔ Caixa "+c+"</div>";
+
+
+});
+
+
+}
+
+
+</script>
+
+
+</body>
+
+</html>
 
